@@ -1,0 +1,168 @@
+var ROUTE_WEEKEND_PESOS = '2800 Pesos';
+var ROUTE_WEEKDAY_PESOS = '1900 Pesos';
+var DATE_X = 1;
+
+function onOpen() {
+    var ui = SpreadsheetApp.getUi();
+    // Or DocumentApp or FormApp.
+    ui.createMenu('Expenses')
+        .addItem('Add Toll', 'menuItem1')
+        .addToUi();
+}
+
+function menuItem1() {
+    var ui = SpreadsheetApp.getUi(); // Same variations.  
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // getting spreadsheet
+    var payedByCell = sheet.getRange(2, 3);
+    var commentCell = sheet.getRange(2, 5);
+    var categoryCell = sheet.getRange(2, 6);
+    //datePrompt(); 
+    datePicker();
+    //Promps user to enter a date
+    //Payed By
+    payedByCell.setValue('Cash + Electronic Toll');
+    //
+    //Category Cell
+    categoryCell.setValue('Toll');
+    //Comment Cell
+    commentCell.setValue('Toll from to to');
+}
+
+function datePrompt() {
+    var cellHeight = 2;
+    var ui = SpreadsheetApp.getUi(); // Same variations.  
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // getting spreadsheet
+    var cell = sheet.getRange(cellHeight, 1);
+    var costCell = sheet.getRange(2, 2);
+    var datePrompt = ui.prompt('Please enter the date of toll ex.2014-05-20: Year-Month-Day', ui.ButtonSet.OK_CANCEL);
+    //Finds Specific Day of week from entered date  
+    var usersInput = datePrompt.getResponseText();
+    var usersDayOfWeek = getDayOfWeek(usersInput);
+    //determines if its weekend or weekday, the assigns cost
+    cell.setValue(usersDayOfWeek + ', ' + usersInput); //Year-Month-Day
+    if (usersDayOfWeek == 'Saturday' || usersDayOfWeek == 'Sunday') {
+        costCell.setValue(ROUTE_WEEKEND_PESOS);
+        Logger.log('Weekend');
+    } else {
+        costCell.setValue(ROUTE_WEEKDAY_PESOS);
+        Logger.log('Weekday');
+    }
+}
+
+function datePicker(handlerFunctionName) {
+    var sh = SpreadsheetApp.getActiveSpreadsheet();
+    var app = UiApp.createApplication().setHeight('225').setWidth('225');
+    var panel = app.createVerticalPanel();
+    var label = app.createLabel("Input A Date");
+    var infoLabel = app.createLabel().setVisible(false).setId('statusInfo').setStyleAttribute('color', '#f00');
+    var hourAndMinuteLabel = app.createLabel('Hour and Minute');
+    var dateBox = app.createDateBox().setName("dBox").setId('dBox');
+    var hour = app.createListBox().setName('hour').setWidth('100');
+    var min = app.createListBox().setName('min').setWidth('100');
+    //assigning values to the list boxes
+    for (h = 0; h < 24; ++h) {
+        if (h < 10) {
+            var hourstr = '0' + h
+        } else {
+            var hourstr = h.toString()
+        }
+        hour.addItem(hourstr)
+    }
+    for (m = 0; m < 60; ++m) {
+        if (m < 10) {
+            var minstr = '0' + m
+        } else {
+            var minstr = m.toString()
+        }
+        min.addItem(minstr)
+    }
+   var cancelButton = app.createButton("Cancel").setId('cancelButton');
+    var button = app.createButton("Validate").setId("enterButton");
+    button.addClickHandler(app.createServerHandler("handlerFunction").addCallbackElement(panel));
+    var timeBox = app.createTextBox().setText('Enter Time');
+    //Radio Box ++ Even Listeners
+    var radio1 = app.createRadioButton('group1', 'To Santiago').setName('First').setId('First');
+    var radio2 = app.createRadioButton('group1', 'To Tunquen').setName('Second').setId('Second');
+    var handler1 = app.createServerValueChangeHandler('showstatus1');
+    handler1.addCallbackElement(panel);
+    //Add this handler to the radio Buttons
+    radio1.addValueChangeHandler(handler1);
+    //Similraly for second radios...
+    var handler2 = app.createServerValueChangeHandler('showstatus2');
+    handler2.addCallbackElement(panel);
+    radio2.addValueChangeHandler(handler2);
+    panel.add(label).add(dateBox).add(hourAndMinuteLabel).add(hour).add(min).add(radio1).add(radio2).add(infoLabel).add(button).add(cancelButton);
+    app.add(panel);
+    sh.show(app);
+}
+
+//event handlers
+//button event handler
+function getDayOfWeek(date) {
+    var dayOfWeek = new Date(date).getDay();
+    return isNaN(dayOfWeek) ? null : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek];
+}
+//radio event handlers
+function showstatus1(e) {
+    var ui = SpreadsheetApp.getUi(); // Same variations.  
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // getting spreadsheet
+    var cell = sheet.getRange(2, 5);
+    var app = UiApp.getActiveApplication();
+    var radioValue = e.parameter.First;
+    app.getElementById('Second').setValue(false);
+    app.getElementById('statusInfo').setVisible(true).setText('You have selected To Santiago:' + radioValue);
+    cell.setValue('To Santiago');
+    return app;
+}
+
+function showstatus2(e) {
+    var ui = SpreadsheetApp.getUi();
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var cell = sheet.getRange(2, 5);
+    var app = UiApp.getActiveApplication();
+    var radioValue = e.parameter.Second;
+    app.getElementById('First').setValue(false);
+    app.getElementById('statusInfo').setVisible(true).setText('You have selected To Tunquen:' + radioValue);
+    cell.setValue('To Tunquen')
+    return app;
+}
+//button event handler 
+function handlerFunction(e) {
+    var ui = SpreadsheetApp.getUi();
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var cell = sheet.getRange(2, DATE_X);
+    var costCell = sheet.getRange(2,2);
+    var app = UiApp.getActiveApplication();
+    var date = new Date(e.parameter.dBox);
+    var time = e.parameter.hour + ":" + e.parameter.min;
+    app.getElementById('statusInfo').setVisible(true).setText('Selected Date: ' + date);
+    cell.setValue(date + ', ' + time);
+    //formanting date
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+    var year = date.getFullYear();
+    // 
+    if (month < 10 || day < 10) {
+        var formattedDate = year + "-" + "0" + month + "-" + "0" + day;
+    } else {
+        var formattedDate = year + "-" + month + "-" + day;
+    }
+    var usersDayOfWeek = getDayOfWeek(formattedDate);
+  //assigns cost based on particular day of week
+   Logger.log('Users Day Of Week and Time')
+   Logger.log(time);
+   Logger.log(usersDayOfWeek);
+   Logger.log('-------------');
+  
+    if (usersDayOfWeek == 'Saturday' || usersDayOfWeek == 'Sunday') {
+        costCell.setValue(ROUTE_WEEKEND_PESOS);
+        Logger.log('Weekend');
+  }else if(e.parameter.hour > 5 && usersDayOfWeek == 'Friday'){
+    costCell.setValue(ROUTE_WEEKEND_PESOS);
+    Logger.log('Friday Past 5 equals Weekend');
+  }else{
+    costCell.setValue(ROUTE_WEEKDAY_PESOS);
+  Logger.log('Weekday');
+  }
+    return app;
+}
