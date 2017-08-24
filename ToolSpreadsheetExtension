@@ -27,28 +27,6 @@ function menuItem1() {
     //Comment Cell
     commentCell.setValue('Toll from to to');
 }
-
-function datePrompt() {
-    var cellHeight = 2;
-    var ui = SpreadsheetApp.getUi(); // Same variations.  
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // getting spreadsheet
-    var cell = sheet.getRange(cellHeight, 1);
-    var costCell = sheet.getRange(2, 2);
-    var datePrompt = ui.prompt('Please enter the date of toll ex.2014-05-20: Year-Month-Day', ui.ButtonSet.OK_CANCEL);
-    //Finds Specific Day of week from entered date  
-    var usersInput = datePrompt.getResponseText();
-    var usersDayOfWeek = getDayOfWeek(usersInput);
-    //determines if its weekend or weekday, the assigns cost
-    cell.setValue(usersDayOfWeek + ', ' + usersInput); //Year-Month-Day
-    if (usersDayOfWeek == 'Saturday' || usersDayOfWeek == 'Sunday') {
-        costCell.setValue(ROUTE_WEEKEND_PESOS);
-        Logger.log('Weekend');
-    } else {
-        costCell.setValue(ROUTE_WEEKDAY_PESOS);
-        Logger.log('Weekday');
-    }
-}
-
 function datePicker(handlerFunctionName) {
     var sh = SpreadsheetApp.getActiveSpreadsheet();
     var app = UiApp.createApplication().setHeight('225').setWidth('225');
@@ -141,6 +119,7 @@ function handlerFunction(e) {
     var month = date.getMonth() + 1;
     var day = date.getDate();
     var year = date.getFullYear();
+    Logger.log(date.toISOString());
     // 
     if (month < 10 || day < 10) {
         var formattedDate = year + "-" + "0" + month + "-" + "0" + day;
