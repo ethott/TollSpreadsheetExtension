@@ -1,9 +1,16 @@
+// Constants
 var ROUTE_WEEKEND_PESOS = '2800 Pesos';
 var ROUTE_WEEKDAY_PESOS = '1900 Pesos';
 var DATE_X = 1;
 var MILES_FROM_AND_TO_SCL = '75';
 var COST_TO_TRAVEL_75_MILES = '$40.13';
 
+//Object Toll Prices that keeps 2 arrays for the individual prices based on the weekend or the weekday
+var TOLL_PRICES ={
+  weekday: [1350,1900,1900],
+  weekend: [1350,2750,2750],
+}
+//when application opens function
 function onOpen() {
     var ui = SpreadsheetApp.getUi();
     // Or DocumentApp or FormApp.
@@ -11,7 +18,7 @@ function onOpen() {
         .addItem('Add Toll', 'menuItem1')
         .addToUi();
 }
-
+//Menu Item Function
 function menuItem1() {
     var ui = SpreadsheetApp.getUi(); // Same variations.  
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // getting spreadsheet
@@ -20,7 +27,7 @@ function menuItem1() {
     var categoryCell = sheet.getRange(2, 6);
     //datePrompt(); 
     datePicker();
-    //Promps user to enter a date
+    //Prompts user to enter a date
     //Payed By
     payedByCell.setValue('Cash + Electronic Toll');
     //Category Cell
@@ -76,26 +83,50 @@ function datePicker(handlerFunctionName) {
         sh.show(app);
     }
     //setting value of date, purpose, miles
-function writeToMileageDate(date) {
-        var mileageSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Mileage");
-        var mileageCell = mileageSheet.getRange(1, 1);
-        var dateCell = mileageSheet.getRange(2, 1);
-        var purposeCell = mileageSheet.getRange(2, 4);
-        var milesCell = mileageSheet.getRange(2, 5);
-        var costCell = mileageSheet.getRange(2, 6);
-        //var costCell = mileageSheet.getRange();
-        dateCell.setValue(date);
-        purposeCell.setValue("Travel to meet subcontractor");
+function writeToMilageDate() {
+        var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expenses");
+        var milageSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("milage");
+        var milageCell = milageSheet.getRange(1, 1);
+        var dateCell = milageSheet.getRange(2, 1);
+        var purposeCell = milageSheet.getRange(2, 4);
+        var milesCell = milageSheet.getRange(2, 5);
+        //var costCell = milageSheet.getRange();
+        var dateISO = ss.getRange("A2").getValue();
+        Logger.log(dateISO);
+        dateCell.setValue(dateISO);
+         
+  
+        purposeCell.setValue("Travel (one way) to me subcontractor");
         milesCell.setValue(MILES_FROM_AND_TO_SCL);
-        costCell.setValue(COST_TO_TRAVEL_75_MILES);
     }
-    //event handlers
-    //button event handler
+   //function that returns the specific day of week based on entered date
 function getDayOfWeek(date) {
         var dayOfWeek = new Date(date).getDay();
-        return isNaN(dayOfWeek) ? null : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek];
+        return isNaN(dayOfWeek) ? null : ['Sunday','Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
     }
-    //radio event handlers
+//function that return true or false if its the weekend
+function isWeekend(date){
+  var dayOfWeek = getDayOfWeek(date);
+  if(dayOfWeek== 'Saturday' || dayOfWeek == 'Sunday'){
+    return true;
+  }
+  if(dayOfWeek == 'Friday' && date.getHours() >= 17){
+    return true;
+  }
+  return false;
+}
+//function that formats the date into ISO8601
+function getISO8601(date,hour,minute,second){
+   function pad(n) {return n<10 ? '0'+n : n}
+    return date.getUTCFullYear()+'-'
+         + pad(date.getUTCMonth()+1)+'-'
+         + pad(date.getUTCDate())+'T'
+         +hour+':'
+         + minute+':'
+         + "00"+'Z'
+// Prints something like 2009-09-28T19:03:12Z
+}
+    //radio event handler
 function showstatus1(e) {
     var ui = SpreadsheetApp.getUi(); // Same variations.  
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // getting spreadsheet
@@ -106,17 +137,15 @@ function showstatus1(e) {
     app.getElementById('statusInfo').setVisible(true).setText('You have selected To Santiago:' + radioValue);
     cell.setValue('To Santiago');
 
-    var mileageSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Mileage");
-    var toCell = mileageSheet.getRange(2, 3);
-    var fromCell = mileageSheet.getRange(2, 2);
-    fromCell.setValue('Home');
-    toCell.setValue('Satiago');
-
-
-
+    //Writing to milage cell, inputing in the to and tom cell	
+    var milageSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("milage");
+    var toCell = milageSheet.getRange(2, 3);
+    var fromCell = milageSheet.getRange(2, 2);
+    fromCell.setValue('Home (Tunquen)');
+    toCell.setValue('Pablo\'s Home Office');
     return app;
 }
-
+//radio event handler
 function showstatus2(e) {
         var ui = SpreadsheetApp.getUi();
         var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -127,18 +156,14 @@ function showstatus2(e) {
         app.getElementById('statusInfo').setVisible(true).setText('You have selected To Tunquen:' + radioValue);
         cell.setValue('To Tunquen');
 
-        var mileageSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Mileage");
-        var toCell = mileageSheet.getRange(2, 3);
-        var fromCell = mileageSheet.getRange(2, 2);
-        fromCell.setValue('Santiago');
-        toCell.setValue('Home');
-
-
-
-
+        var milageSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("milage");
+        var toCell = milageSheet.getRange(2, 3);
+        var fromCell = milageSheet.getRange(2, 2);
+        fromCell.setValue('Pablo\'s Home Office');
+        toCell.setValue('Home (Tunquen)');
         return app;
     }
-    //button event handler 
+    //validate button event handler 
 function handlerFunction(e) {
     var ui = SpreadsheetApp.getUi();
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -146,38 +171,40 @@ function handlerFunction(e) {
     var costCell = sheet.getRange(2, 2);
     var app = UiApp.getActiveApplication();
     var date = new Date(e.parameter.dBox);
+    var hour = e.parameter.hour;
+    var minute = e.parameter.min;
+    var second = e.parameter.sec;
     var time = e.parameter.hour + ":" + e.parameter.min;
-    app.getElementById('statusInfo').setVisible(true).setText('Selected Date: ' + date);
-    cell.setValue(date + ', ' + time);
-    //formanting date
     var month = date.getMonth() + 1;
     var day = date.getDate();
     var year = date.getFullYear();
-    Logger.log(date.toISOString());
-    //writing date to other spreadsheet
-    writeToMileageDate(date);
-    // 
-    if (month < 10 || day < 10) {
-        var formattedDate = year + "-" + "0" + month + "-" + "0" + day;
-    } else {
-        var formattedDate = year + "-" + month + "-" + day;
-    }
-    var usersDayOfWeek = getDayOfWeek(formattedDate);
+    //Alerting user of selected date
+    app.getElementById('statusInfo').setVisible(true).setText('Selected Date: ' + date);
+    //getting IOS8601 date and setting its cell value
+    cell.setValue(getISO8601(date,hour,minute,second));
+    //formanting date
+    //writing date to milage spreadsheet
+    writeToMilageDate();
+    //
     //assigns cost based on particular day of week
-    Logger.log('Users Day Of Week and Time')
-    Logger.log(time);
-    Logger.log(usersDayOfWeek);
-    Logger.log('-------------');
-
-    if (usersDayOfWeek == 'Saturday' || usersDayOfWeek == 'Sunday') {
-        costCell.setValue(ROUTE_WEEKEND_PESOS);
-        Logger.log('Weekend');
-    } else if (e.parameter.hour > 5 && usersDayOfWeek == 'Friday') {
-        costCell.setValue(ROUTE_WEEKEND_PESOS);
-        Logger.log('Friday Past 5 equals Weekend');
-    } else {
-        costCell.setValue(ROUTE_WEEKDAY_PESOS);
-        Logger.log('Weekday');
-    }
+     type = isWeekend(date);
+     var tolls = TOLL_PRICES[type ? 'weekend' : 'weekday'];
+     var sum = tolls.reduce(function(total, tollPrice) { return total + tollPrice; }, 0);
+   //Setting the total sum of toll in cell
+     costCell.setValue(sum+"CLP"); 
+    Logger.log(sum);
     return app;
+}
+//cancel button event handler
+
+
+
+
+//Testing function
+function test() {
+  var date = new Date('2017-08-18T03:00:00Z');
+  var type = isWeekend(date);
+  var tolls = TOLL_PRICES[type ? 'weekend' : 'weekday'];
+  var sum = tolls.reduce(function(total, tollPrice) { return total + tollPrice; }, 0);
+  Logger.log(sum);
 }
